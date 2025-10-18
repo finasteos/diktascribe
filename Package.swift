@@ -16,8 +16,8 @@ let package = Package(
         // AudioKit for audio processing
         .package(url: "https://github.com/AudioKit/AudioKit", from: "5.6.0"),
 
-        // Swift-Whisper for real-time transcription
-        .package(url: "https://github.com/ggerganov/whisper.swift", from: "1.0.0"),
+        // Swift-Whisper for real-time transcription (Metal backend)
+        .package(url: "https://github.com/ggerganov/whisper.swift", branch: "master"),
 
         // MarkdownUI for rich text display
         .package(url: "https://github.com/gonzalezreal/MarkdownUI", from: "2.0.0"),

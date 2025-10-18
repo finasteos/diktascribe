@@ -13,7 +13,17 @@ final class Recording {
     var sampleRate: Double
     var channels: Int
     var format: String
-    var transcription: Transcription?
+    var transcriptionText: String?
+    var transcription: Transcription? {
+        get {
+            guard let transcriptionText = transcriptionText else { return nil }
+            // In a real implementation, this would deserialize the stored transcription
+            return Transcription(text: transcriptionText, confidence: 0.8, language: "sv")
+        }
+        set {
+            transcriptionText = newValue?.text
+        }
+    }
     var isFavorite: Bool
     var isAnalyzed: Bool
     var thread: RecordingThread?

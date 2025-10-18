@@ -1,8 +1,11 @@
 import SwiftUI
 import SwiftData
+import BackgroundTasks
 
 @main
 struct AudioMemoAppApp: App {
+    @UIApplicationDelegateAdaptor private var appDelegate: LAGAAppDelegate
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Recording.self,
@@ -29,6 +32,19 @@ struct AudioMemoAppApp: App {
                     // TODO: Implement global recording shortcut
                 }
                 .keyboardShortcut("r", modifiers: [.command, .shift])
+            }
+        }
+        .onChange(of: UIApplication.shared.backgroundRefreshStatus) { status in
+            switch status {
+            case .available:
+                print("Background refresh available")
+                BGProcessingTask.registerBackgroundTasks()
+            case .denied:
+                print("Background refresh denied")
+            case .restricted:
+                print("Background refresh restricted")
+            @unknown default:
+                print("Unknown background refresh status")
             }
         }
     }
