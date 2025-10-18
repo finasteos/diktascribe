@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import SPIndicator
 
 // MARK: - Recording Detail View
 
@@ -299,31 +300,92 @@ struct NoTranscriptionSection: View {
 struct ActionSection: View {
     let recording: Recording
     let onExport: () -> Void
+    @StateObject private var gitHubService = GitHubService()
+    @State private var showGitHubSetup = false
 
     var body: some View {
-        HStack(spacing: 12) {
-            Button(action: onExport) {
-                Label("Export", systemImage: "square.and.arrow.up")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-
+        VStack(spacing: 12) {
+            // Primary LAGA Export Button
             Button(action: {
-                // TODO: Share recording
+                Task {
+                    await sendToLAGA()
+                }
             }) {
-                Label("Share", systemImage: "square.and.arrow.up.on.square")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
+                HStack {
+                    if gitHubService.isExporting {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle())
+                    } else {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.title2)
+                    }
 
-            Button(action: {
-                // TODO: Add to favorites
-            }) {
-                Label(recording.isFavorite ? "Favorited" : "Add to Favorites", systemImage: "star")
-                    .frame(maxWidth: .infinity)
+                    Text("Send to LAGA")
+                        .font(.headline)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.accentColor)
+                .foregroundColor(.white)
+                .cornerRadius(12)
             }
-            .buttonStyle(.bordered)
-            .tint(recording.isFavorite ? .yellow : .accentColor)
+            .disabled(gitHubService.isExporting)
+
+            // Secondary Action Buttons
+            HStack(spacing: 12) {
+                Button(action: onExport) {
+                    Label("Export", systemImage: "square.and.arrow.up")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+
+                Button(action: {
+                    // TODO: Share recording
+                }) {
+                    Label("Share", systemImage: "square.and.arrow.up.on.square")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+
+                Button(action: {
+                    // TODO: Add to favorites
+                }) {
+                    Label(recording.isFavorite ? "Favorited" : "Add to Favorites", systemImage: "star")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(recording.isFavorite ? .yellow : .accentColor)
+            }
+        }
+        .sheet(isPresented: $showGitHubSetup) {
+            GitHubSetupView()
+        }
+        .alert("GitHub Token Required", isPresented: $showGitHubSetup) {
+            Button("Configure Token") {
+                showGitHubSetup = true
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Please configure your GitHub Personal Access Token to send recordings to LAGA.")
+        }
+    }
+
+    private func sendToLAGA() async {
+        do {
+            let issueURL = try await gitHubService.createIssue(from: recording)
+
+            // Show success indicator
+            SPIndicator.present(title: "Issue Created!", message: "Recording sent to LAGA successfully", preset: .done, haptic: .success) {
+                // Open the created issue in browser
+                if let url = URL(string: issueURL) {
+                    UIApplication.shared.open(url)
+                }
+            }
+
+        } catch GitHubError.noToken {
+            showGitHubSetup = true
+        } catch {
+            SPIndicator.present(title: "Export Failed", message: error.localizedDescription, preset: .error, haptic: .error)
         }
     }
 }

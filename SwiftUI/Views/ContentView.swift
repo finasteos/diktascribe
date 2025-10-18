@@ -8,6 +8,7 @@ struct ContentView: View {
     @State private var selectedRecordingForTranscription: Recording?
     @State private var selectedRecording: Recording?
     @State private var navigationPath = NavigationPath()
+    @State private var showSettings = false
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -66,7 +67,7 @@ struct ContentView: View {
                         }
 
                         Button("Settings") {
-                            // TODO: Implement settings view
+                            showSettings = true
                         }
 
                         Button("Create Test Recording") {
@@ -92,6 +93,9 @@ struct ContentView: View {
                         // TODO: Implement transcription cancellation
                     }
                 )
+            }
+            .sheet(isPresented: $showSettings) {
+                SettingsView()
             }
         }
     }
