@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 import SwiftData
+import AudioKit
 
 @MainActor
 class AudioRecordingService: NSObject, ObservableObject {

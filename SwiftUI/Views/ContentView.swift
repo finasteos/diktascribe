@@ -6,9 +6,11 @@ struct ContentView: View {
     @StateObject private var viewModel = RecordingViewModel()
     @State private var showTranscriptionProgress = false
     @State private var selectedRecordingForTranscription: Recording?
+    @State private var selectedRecording: Recording?
+    @State private var navigationPath = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             VStack {
 
                 // Search bar
@@ -31,6 +33,9 @@ struct ContentView: View {
                             },
                             toggleFavoriteAction: {
                                 viewModel.toggleFavorite(recording)
+                            },
+                            navigationAction: {
+                                navigationPath.append(recording)
                             }
                         )
                     }
@@ -50,6 +55,9 @@ struct ContentView: View {
 
             }
             .navigationTitle("LAGA Ideas Recorder")
+            .navigationDestination(for: Recording.self) { recording in
+                RecordingDetailView(recording: recording)
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
@@ -96,6 +104,7 @@ struct RecordingRow: View {
     let playAction: () -> Void
     let transcribeAction: () -> Void
     let toggleFavoriteAction: () -> Void
+    let navigationAction: () -> Void
 
     var body: some View {
         HStack {
@@ -130,6 +139,10 @@ struct RecordingRow: View {
                             .font(.caption)
                             .foregroundColor(.green)
                     }
+
+                    // Mini waveform preview
+                    MiniWaveformView(audioURL: recording.fileURL, isPlaying: isPlaying)
+                        .frame(width: 60, height: 20)
                 }
             }
 
@@ -154,6 +167,9 @@ struct RecordingRow: View {
         }
         .padding(.vertical, 8)
         .contentShape(Rectangle())
+        .onTapGesture {
+            navigationAction()
+        }
         .contextMenu {
             Button(action: toggleFavoriteAction) {
                 Label(recording.isFavorite ? "Remove from Favorites" : "Add to Favorites",
@@ -305,6 +321,34 @@ struct TranscriptionProgressView: View {
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
+    }
+}
+
+// MARK: - MiniWaveformView (Compact version for list items)
+
+struct MiniWaveformView: View {
+    let audioURL: URL
+    let isPlaying: Bool
+    @State private var waveformData: [Float] = []
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 1) {
+            ForEach(0..<min(waveformData.count, 20), id: \.self) { index in
+                RoundedRectangle(cornerRadius: 0.5)
+                    .fill(isPlaying ? Color.accentColor : Color.secondary.opacity(0.6))
+                    .frame(width: 2, height: CGFloat(waveformData[index]) * 15)
+            }
+        }
+        .onAppear {
+            generateMiniWaveform()
+        }
+    }
+
+    private func generateMiniWaveform() {
+        // Generate simple mock data for the mini view
+        waveformData = (0..<20).map { _ in
+            Float.random(in: 0.3...1.0)
+        }
     }
 }
 
